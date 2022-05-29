@@ -1,0 +1,19 @@
+compatibility_date = "2022-05-28"
+main = "src/index.ts"
+name = "worker"
+
+[durable_objects]
+bindings = [
+  {name = "TODO", class_name = "Todo"},
+]
+
+[[migrations]]
+new_classes = ["Todo"]
+tag = "v1"
+
+[miniflare]
+debug = true
+durable_objects_persist = true
+kv_persist = true
+live_reload = true
+watch = true
