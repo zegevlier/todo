@@ -19,8 +19,12 @@ export class Todos {
     value: Todo[] = [];
     sessions: Session[] = [];
 
-    async broadcast(value: any) {
+    async broadcast(value: any, dontSendTo: Session | null = null) {
         this.sessions = this.sessions.filter(session => {
+            if (session.id === dontSendTo?.id) {
+                // Just don't send it to this one, we can keep it open
+                return true;
+            }
             try {
                 session.ws.send(JSON.stringify(value));
                 return true;
@@ -55,7 +59,7 @@ export class Todos {
 
             const [client, server] = Object.values(new WebSocketPair());
             const session: Session = {
-                ws: client,
+                ws: server,
                 closed: false,
                 id: nanoid(),
             };

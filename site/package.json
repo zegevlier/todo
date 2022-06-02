@@ -12,6 +12,7 @@
     "@types/react-dom": "^18.0.5",
     "react": "^18.1.0",
     "react-dom": "^18.1.0",
+    "react-edit-text": "github:zegevlier/react-edit-text",
     "react-router-dom": "^6.3.0",
     "react-scripts": "5.0.1",
     "react-use-websocket": "^3.0.0",
@@ -41,5 +42,12 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/react-edit-text": "^4.4.1",
+    "autoprefixer": "^10.4.7",
+    "postcss": "^8.4.14",
+    "sass": "^1.52.1",
+    "tailwindcss": "^3.0.24"
   }
 }

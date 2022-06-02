@@ -1,12 +1,12 @@
 import './App.css';
-import TodoList from './components/TodoList';
+import TodoList from './pages/TodoList';
 
 import {
   BrowserRouter as Router,
   Route,
   Routes,
 } from "react-router-dom";
-import Home from './components/Home';
+import Home from './pages/Home';
 
 function App() {
   return (
