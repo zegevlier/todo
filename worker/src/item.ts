@@ -86,7 +86,7 @@ export class Items {
                         return;
                     }
                     this.value = newValue;
-                    await this.state.storage.put("value", this.value);
+                    c.event?.waitUntil(this.state.storage.put("value", this.value));
                     this.broadcast({
                         'type': 'update', 'data': message.data
                     });
@@ -103,7 +103,7 @@ export class Items {
                     const [removed] = newValue.splice(message.data.oldIdx, 1);
                     newValue.splice(message.data.newIdx, 0, removed);
                     this.value = newValue;
-                    await this.state.storage.put("value", this.value);
+                    c.event?.waitUntil(this.state.storage.put("value", this.value));
 
                     this.broadcast({
                         'type': 'order', 'data': {
@@ -121,7 +121,7 @@ export class Items {
                         'checked': false
                     };
                     this.value.push(newItem);
-                    await this.state.storage.put("value", this.value);
+                    c.event?.waitUntil(this.state.storage.put("value", this.value));
                     this.broadcast({
                         'type': 'add', 'data': newItem
                     });
@@ -133,7 +133,7 @@ export class Items {
                         return;
                     }
                     this.value = this.value.filter(t => t.id !== message.id);
-                    await this.state.storage.put("value", this.value);
+                    c.event?.waitUntil(this.state.storage.put("value", this.value));
                     this.broadcast({
                         'type': 'remove', 'data': item
                     });

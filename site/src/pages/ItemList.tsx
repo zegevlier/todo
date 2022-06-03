@@ -34,8 +34,8 @@ function ItemList() {
       reconnectAttempts: 10,
       reconnectInterval: 3000,
       share: true,
-      onMessage: (message: MessageEvent) => {
-        const msg = JSON.parse(message.data);
+      onMessage: (unparsedMessage: MessageEvent) => {
+        const msg = JSON.parse(unparsedMessage.data);
         if (msg instanceof Array) {
           setItems(msg);
         } else {
@@ -50,7 +50,19 @@ function ItemList() {
               )
             );
           } else if (msg.type === "set") {
+            console.log("set", msg.data);
             setItems(msg.data);
+          } else if (msg.type === "order") {
+            console.log("order", msg.data);
+            const oldIdx = items.findIndex((item) => item.id === msg.data.id);
+            if (oldIdx !== msg.data.oldIdx) {
+              console.log("desync", msg.data.id, oldIdx, items);
+              return;
+            }
+            const newItems = [...items];
+            const [removed] = newItems.splice(msg.data.oldIdx, 1);
+            newItems.splice(msg.data.newIdx, 0, removed);
+            setItems(newItems);
           } else {
             console.error("Unknown message type:", msg.type, msg);
           }
@@ -122,6 +134,14 @@ function ItemList() {
     const [removed] = newItems.splice(e.source.index, 1);
     newItems.splice(e.destination.index, 0, removed);
     setItems(newItems);
+    sendJsonMessage({
+      type: "order",
+      data: {
+        id: removed.id,
+        oldIdx: e.source.index,
+        newIdx: e.destination.index,
+      },
+    });
   }
 
   return (
@@ -192,11 +212,7 @@ function ItemList() {
         >
           <Droppable droppableId="droppable">
             {(provided) => (
-              <div
-                id="droppable"
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-              >
+              <div {...provided.droppableProps} ref={provided.innerRef}>
                 {items.map((item, index) => (
                   <Draggable key={item.id} draggableId={item.id} index={index}>
                     {(provided) => (
@@ -254,6 +270,7 @@ function ItemList() {
                     )}
                   </Draggable>
                 ))}
+                {provided.placeholder}
               </div>
             )}
           </Droppable>
