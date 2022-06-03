@@ -24,6 +24,8 @@ function ItemList() {
 
   const [items, setItems] = useState<Item[]>([]);
   const [adding, setAdding] = useState<string>("");
+  const [shareLink, setShareLink] = useState<string>("");
+  const [shareDropdownShown, setShareDropdownShown] = useState<boolean>(false);
 
   const { sendJsonMessage, readyState } = useWebSocket(
     `${process.env.REACT_APP_WS_URL}/${id}/ws`,
@@ -167,6 +169,20 @@ function ItemList() {
     }
   }
 
+  function shareOrCopy(url: string) {
+    setShareDropdownShown(false);
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(url);
+    }
+    if (navigator.share && navigator.canShare()) {
+      navigator.share({
+        url: url,
+        title: "List",
+      });
+    }
+    setShareLink(url);
+  }
+
   return (
     <div className="h-screen bg-slate-50 overflow-hidden">
       <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
@@ -174,17 +190,71 @@ function ItemList() {
           <p className="text-3xl text-white order-first ml-0 mr-auto">
             Shopping list
           </p>
-          <div id="pushDownButton" title={connectionStatus} className="">
+          <div id="shareButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
               <button
-                onClick={() => sendJsonMessage({ type: "push_down" })}
                 className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
-                aria-label="Push down checked"
+                aria-label="Open share dropdown"
+                onClick={() => setShareDropdownShown(!shareDropdownShown)}
               >
-                PD
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
               </button>
             </div>
+            <div
+              id="shareDropdown"
+              className={`${
+                shareDropdownShown ? "" : "hidden"
+              } origin-top-right absolute right-0 mt-2 w-40 rounded-bl-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10 divide-gray-100 dark:bg-gray-700`}
+            >
+              <ul
+                className="py-1 text-sm text-gray-700 dark:text-gray-200"
+                aria-labelledby="dropdownDefault"
+              >
+                <li>
+                  <button
+                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
+                    onClick={() => {
+                      shareOrCopy(window.location.href);
+                    }}
+                  >
+                    Live edit
+                  </button>
+                </li>
+                <li>
+                  <button
+                    className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
+                    onClick={() => {
+                      fetch(`${process.env.REACT_APP_API_URL}/${id}/export`)
+                        .then((res) => res.json())
+                        .then((data) => {
+                          shareOrCopy(
+                            new URL(window.location.href).origin +
+                              "/r/" +
+                              data.id
+                          );
+                        });
+                    }}
+                  >
+                    Read only
+                  </button>
+                </li>
+              </ul>
+            </div>
           </div>
+
           <div id="refreshButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
               <button
@@ -193,15 +263,18 @@ function ItemList() {
                 aria-label="Refresh"
               >
                 <svg
-                  id="Layer_1"
-                  data-name="Layer 1"
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
-                  viewBox="0 0 119.4 122.88"
-                  fill="currentColor"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
                 >
-                  <path d="M83.91,26.34a43.78,43.78,0,0,0-22.68-7,42,42,0,0,0-24.42,7,49.94,49.94,0,0,0-7.46,6.09,42.07,42.07,0,0,0-5.47,54.1A49,49,0,0,0,30,94a41.83,41.83,0,0,0,18.6,10.9,42.77,42.77,0,0,0,21.77.13,47.18,47.18,0,0,0,19.2-9.62,38,38,0,0,0,11.14-16,36.8,36.8,0,0,0,1.64-6.18,38.36,38.36,0,0,0,.61-6.69,8.24,8.24,0,1,1,16.47,0,55.24,55.24,0,0,1-.8,9.53A54.77,54.77,0,0,1,100.26,108a63.62,63.62,0,0,1-25.92,13.1,59.09,59.09,0,0,1-30.1-.25,58.45,58.45,0,0,1-26-15.17,65.94,65.94,0,0,1-8.1-9.86,58.56,58.56,0,0,1,7.54-75,65.68,65.68,0,0,1,9.92-8.09A58.38,58.38,0,0,1,61.55,2.88,60.51,60.51,0,0,1,94.05,13.3l-.47-4.11A8.25,8.25,0,1,1,110,7.32l2.64,22.77h0a8.24,8.24,0,0,1-6.73,9L82.53,43.31a8.23,8.23,0,1,1-2.9-16.21l4.28-.76Z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 <div
                   style={{ backgroundColor: readyColour }}
@@ -212,6 +285,82 @@ function ItemList() {
           </div>
         </div>
       </nav>
+
+      <div
+        style={{
+          backgroundColor: "#000",
+          opacity: 0.7,
+          width: "100%",
+          height: "100%",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          zIndex: "10",
+          animation: `fadein 200ms ease-in-out forwards`,
+        }}
+        className={`${shareLink ? "" : "hidden"}`}
+      ></div>
+
+      <div
+        id="share-modal"
+        tabIndex={-1}
+        aria-hidden="true"
+        className={`${
+          shareLink ? "" : "hidden"
+        } overflow-y-auto overflow-x-hidden fixed z-50 w-full md:inset-0 md:h-full flex justify-center items-start md:pt-40`}
+      >
+        <div className="relative p-4 w-full max-w-md h-full md:h-auto content-center">
+          <div className="relative bg-white rounded-lg shadow dark:bg-gray-700">
+            <button
+              type="button"
+              className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
+              data-modal-toggle="authentication-modal"
+              onClick={() => {
+                setShareLink("");
+              }}
+            >
+              <svg
+                className="w-5 h-5"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+            </button>
+
+            <div className="py-6 px-6 lg:px-8">
+              <h3 className="mb-4 text-xl font-medium text-gray-900 dark:text-white">
+                Copied your share link!
+              </h3>
+              <div className="space-y-3">
+                <div>
+                  <input
+                    name="link"
+                    id="link"
+                    className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
+                    placeholder=""
+                    readOnly
+                    value={shareLink}
+                  />
+                </div>
+                <button
+                  className="w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+                  onClick={() => {
+                    setShareLink("");
+                  }}
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div
         id="items"
