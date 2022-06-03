@@ -69,10 +69,13 @@ export class Todos {
                 const message = JSON.parse(event.data as string);
                 console.log(message);
                 if (message.type === 'get') {
-                    server.send(JSON.stringify({
-                        type: 'set',
-                        data: this.value
-                    }));
+                    setTimeout(() => {
+
+                        server.send(JSON.stringify({
+                            type: 'set',
+                            data: this.value
+                        }));
+                    }, 1000);
                 }
                 if (message.type === 'update') {
                     this.value = this.value.map(todo => todo.id === message.data.id ? { ...todo, ...message.data } : todo);
