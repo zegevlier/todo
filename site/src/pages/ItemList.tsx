@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import useWebSocket, { ReadyState } from "react-use-websocket";
 
-import { EditText } from "react-edit-text";
+import { EditText, onSaveProps } from "react-edit-text";
 
 import {
   DragDropContext,
@@ -53,7 +53,6 @@ function ItemList() {
             console.log("set", msg.data);
             setItems(msg.data);
           } else if (msg.type === "order") {
-            console.log("order", msg.data);
             const oldIdx = items.findIndex((item) => item.id === msg.data.id);
             if (oldIdx !== msg.data.oldIdx) {
               console.log("desync", msg.data.id, oldIdx, items);
@@ -144,9 +143,33 @@ function ItemList() {
     });
   }
 
+  function onEditBoxSave(value: onSaveProps, id: string) {
+    if (value.value.length > 250) {
+      // Don't allow it to be sent to the server
+      // Set it back to the old value
+
+      console.log("too long");
+      return;
+    }
+    if (value.value.length === 0) {
+      sendJsonMessage({
+        type: "remove",
+        id: id,
+      });
+    } else {
+      sendJsonMessage({
+        type: "update",
+        data: {
+          id: id,
+          value: value.value,
+        },
+      });
+    }
+  }
+
   return (
     <div className="h-screen bg-slate-50 overflow-hidden">
-      <nav className="px-1 sm:px-2 py-2 dark:bg-gray-800 w-screen">
+      <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
         <div className="flex gap-1 items-center">
           <p className="text-3xl text-white order-first ml-0 mr-auto">
             Shopping list
@@ -180,11 +203,11 @@ function ItemList() {
                 >
                   <path d="M83.91,26.34a43.78,43.78,0,0,0-22.68-7,42,42,0,0,0-24.42,7,49.94,49.94,0,0,0-7.46,6.09,42.07,42.07,0,0,0-5.47,54.1A49,49,0,0,0,30,94a41.83,41.83,0,0,0,18.6,10.9,42.77,42.77,0,0,0,21.77.13,47.18,47.18,0,0,0,19.2-9.62,38,38,0,0,0,11.14-16,36.8,36.8,0,0,0,1.64-6.18,38.36,38.36,0,0,0,.61-6.69,8.24,8.24,0,1,1,16.47,0,55.24,55.24,0,0,1-.8,9.53A54.77,54.77,0,0,1,100.26,108a63.62,63.62,0,0,1-25.92,13.1,59.09,59.09,0,0,1-30.1-.25,58.45,58.45,0,0,1-26-15.17,65.94,65.94,0,0,1-8.1-9.86,58.56,58.56,0,0,1,7.54-75,65.68,65.68,0,0,1,9.92-8.09A58.38,58.38,0,0,1,61.55,2.88,60.51,60.51,0,0,1,94.05,13.3l-.47-4.11A8.25,8.25,0,1,1,110,7.32l2.64,22.77h0a8.24,8.24,0,0,1-6.73,9L82.53,43.31a8.23,8.23,0,1,1-2.9-16.21l4.28-.76Z" />
                 </svg>
+                <div
+                  style={{ backgroundColor: readyColour }}
+                  className="absolute bottom-0 -right-1 w-4 h-4 mr-1 rounded-full"
+                ></div>
               </button>
-              <div
-                style={{ backgroundColor: readyColour }}
-                className="absolute bottom-0 -right-1 w-4 h-4 mr-1 rounded-full"
-              ></div>
             </div>
           </div>
         </div>
@@ -192,7 +215,7 @@ function ItemList() {
 
       <div
         id="items"
-        className="bg-slate-50 pt-2 text-xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
+        className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
         style={{ maxHeight: "88vh" }}
       >
         <DragDropContext
@@ -246,15 +269,7 @@ function ItemList() {
                             inputClassName="w-screen mr-1"
                             defaultValue={item.value}
                             id="inputelement"
-                            onSave={(value) => {
-                              sendJsonMessage({
-                                type: "update",
-                                data: {
-                                  id: item.id,
-                                  value: value.value,
-                                },
-                              });
-                            }}
+                            onSave={(v) => onEditBoxSave(v, item.id)}
                           />
                           <button
                             className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto"
@@ -285,6 +300,7 @@ function ItemList() {
             type="text"
             value={adding}
             id="addItemBox"
+            maxLength={250}
             onChange={(e) => {
               setAdding(e.target.value);
             }}

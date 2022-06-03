@@ -2,9 +2,13 @@ compatibility_date = "2022-05-28"
 main = "src/index.ts"
 name = "worker"
 
+kv_namespaces = [
+  {binding = "exports", id = "2c22c3fa276142c180fded963195bbc0", preview_id = "cc0394082ce84700ba4eeff36fec1280"},
+]
+
 [durable_objects]
 bindings = [
-  {name = "ITEMS", class_name = "Items"},
+  {name = "items", class_name = "Items"},
 ]
 
 [[migrations]]

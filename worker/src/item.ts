@@ -13,49 +13,54 @@ type Session = {
     id: string;
 }
 
+function isOkValue(value: string): boolean {
+    // See if it machtes the regexp
+    return /^[ \S]{1,250}$/.test(value);
+}
+
 export class Items {
     state: DurableObjectState;
-    app: Hono = new Hono();
-    value: Item[] = [];
+    app = new Hono<Env>();
+    items: Item[] = [];
     sessions: Session[] = [];
+    env: Env;
 
     resyncClient(ws: WebSocket) {
         ws.send(JSON.stringify({
             type: 'set',
-            data: this.value,
+            data: this.items,
         }));
     }
 
-    async broadcast(value: any, dontSendTo: Session | null = null) {
+    async broadcast(value: any) {
         this.sessions = this.sessions.filter(session => {
-            if (session.id === dontSendTo?.id) {
-                // Just don't send it to this one, we can keep it open
-                return true;
-            }
             try {
                 session.ws.send(JSON.stringify(value));
                 return true;
             }
             catch (error) {
                 session.closed = true;
+                console.log(`Session ${session.id} closed due to error: ${error}`);
                 return false;
             }
         });
     }
 
-    constructor(state: DurableObjectState) {
+    constructor(state: DurableObjectState, env: Env) {
         this.state = state;
+        this.env = env;
 
         this.state.blockConcurrencyWhile(async () => {
-            this.value = await this.state.storage.get("value") || [];
+            this.items = await this.state.storage.get("value") || [];
         });
 
         this.app.use('/api/*', async (c, next) => {
-            // Add cors headers, then continue
+            // Add cors headers, should probably be turned off in production
             await next();
             c.res.headers.append('Access-Control-Allow-Origin', '*');
             c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
         });
+
         const api = this.app.route("/api");
 
         api.get("/:id/ws", async (c) => {
@@ -64,90 +69,145 @@ export class Items {
                 return c.text('Expected Upgrade: websocket', 426);
             }
 
-            const [client, server] = Object.values(new WebSocketPair());
+            const [clientWsConnection, ws] = Object.values(new WebSocketPair());
             const session: Session = {
-                ws: server,
+                ws: ws,
                 closed: false,
                 id: nanoid(),
             };
-            server.accept();
+            // ws is the thing we need to use, clientWsConnection is the thing we send to the client
+            ws.accept();
 
-            server.addEventListener('message', async (event) => {
-                const message = JSON.parse(event.data as string);
+            ws.addEventListener('message', async (event) => {
+                // Everything is JSON, otherwise the client is doing something wrong
+                let message: any;
+                try {
+                    message = JSON.parse(event.data as string);
+                } catch {
+                    console.log('Client sent invalid JSON, bad client!');
+                    session.closed = true;
+                    session.ws.close(1002); // 1002 is a protocol error
+                    return;
+                }
+
                 console.log(message);
-                if (message.type === 'get') {
-                    this.resyncClient(server);
-                }
-                if (message.type === 'update') {
-                    const newValue = this.value.map(item => item.id === message.data.id ? { ...item, ...message.data } : item);
-                    if (newValue === this.value) {
-                        // The client is probably desynced
-                        this.resyncClient(server);
-                        return;
-                    }
-                    this.value = newValue;
-                    c.event?.waitUntil(this.state.storage.put("value", this.value));
-                    this.broadcast({
-                        'type': 'update', 'data': message.data
-                    });
-                }
-                if (message.type === 'order') {
-                    // Changes the order of the items, id goes from oldIdx to newIdx
-                    // if id is not at oldIdx, send back set.
-                    const oldIdx = this.value.findIndex(item => item.id === message.data.id);
-                    if (oldIdx !== message.data.oldIdx) {
-                        this.resyncClient(server);
-                        return;
-                    }
-                    const newValue = [...this.value];
-                    const [removed] = newValue.splice(message.data.oldIdx, 1);
-                    newValue.splice(message.data.newIdx, 0, removed);
-                    this.value = newValue;
-                    c.event?.waitUntil(this.state.storage.put("value", this.value));
 
-                    this.broadcast({
-                        'type': 'order', 'data': {
-                            id: message.data.id,
-                            oldIdx: message.data.oldIdx,
-                            newIdx: message.data.newIdx
+                switch (message.type) {
+                    case 'get': {
+                        this.resyncClient(ws);
+                        break;
+                    }
+                    case 'update': {
+                        if (!message.data || !message.data.id) {
+                            return;
                         }
-                    });
-                }
-                if (message.type === 'add') {
-                    const id = await nanoid();
-                    const newItem = {
-                        'id': id,
-                        'value': message.value,
-                        'checked': false
-                    };
-                    this.value.push(newItem);
-                    c.event?.waitUntil(this.state.storage.put("value", this.value));
-                    this.broadcast({
-                        'type': 'add', 'data': newItem
-                    });
-                }
-                if (message.type === 'remove') {
-                    const item = this.value.find(t => t.id === message.id);
-                    if (!item) {
-                        this.resyncClient(server);
-                        return;
+                        let somethingChanged = false;
+                        if (message.data.value) {
+                            if (!isOkValue(message.data.value)) {
+                                console.log('Client sent invalid value, bad client!');
+                                // Shoud be validated on the client, so no need to send an error
+                                return;
+                            }
+                            this.items = this.items.map(item => {
+                                if (item.id === message.data.id) {
+                                    return {
+                                        ...item,
+                                        value: message.data.value,
+                                    };
+                                }
+                                return item;
+                            });
+                            somethingChanged = true;
+                        }
+                        if (message.data.checked || message.data.checked === false) {
+                            this.items = this.items.map(item => {
+                                if (item.id === message.data.id) {
+                                    return {
+                                        ...item,
+                                        checked: message.data.checked,
+                                    };
+                                }
+                                return item;
+                            });
+                            somethingChanged = true;
+                        }
+                        if (!somethingChanged) {
+                            return;
+                        }
+                        this.state.storage.put("value", this.items)
+                        this.broadcast({
+                            'type': 'update', 'data': {
+                                'id': message.data.id,
+                                'value': message.data.value,
+                                'checked': message.data.checked,
+                            }
+                        });
+                        break;
                     }
-                    this.value = this.value.filter(t => t.id !== message.id);
-                    c.event?.waitUntil(this.state.storage.put("value", this.value));
-                    this.broadcast({
-                        'type': 'remove', 'data': item
-                    });
-                }
+                    case 'order': {
+                        // Changes the order of the items, id goes from oldIdx to newIdx
+                        // if id is not at oldIdx, send back set.
+                        const oldIdx = this.items.findIndex(item => item.id === message.data.id);
+                        if (oldIdx !== message.data.oldIdx) {
+                            this.resyncClient(ws);
+                            return;
+                        }
+                        const newValue = [...this.items];
+                        const [removed] = newValue.splice(message.data.oldIdx, 1);
+                        newValue.splice(message.data.newIdx, 0, removed);
+                        this.items = newValue;
+                        this.state.storage.put("value", this.items)
 
+                        this.broadcast({
+                            'type': 'order', 'data': {
+                                id: message.data.id,
+                                oldIdx: message.data.oldIdx,
+                                newIdx: message.data.newIdx
+                            }
+                        });
+                        break;
+                    }
+                    case 'add': {
+                        if (!message.value || !isOkValue(message.value)) {
+                            console.log('Client sent invalid value, bad client!');
+                            return;
+                        }
+                        const id = await nanoid();
+                        const newItem = {
+                            'id': id,
+                            'value': message.value,
+                            'checked': false
+                        };
+                        this.items.push(newItem);
+                        this.state.storage.put("value", this.items)
+                        this.broadcast({
+                            'type': 'add', 'data': newItem
+                        });
+                        break;
+                    }
+                    case 'remove': {
+                        const item = this.items.find(t => t.id === message.id);
+                        if (!item) {
+                            this.resyncClient(ws);
+                            return;
+                        }
+                        this.items = this.items.filter(t => t.id !== message.id);
+                        this.state.storage.put("value", this.items)
+                        this.broadcast({
+                            'type': 'remove', 'data': item
+                        });
+                        break;
+                    }
+                }
             });
 
-            server.addEventListener('close', () => {
-                console.log('connection closed');
+            ws.addEventListener('close', () => {
+                console.log(`Session ${session.id} closed`);
                 this.sessions = this.sessions.filter(tsession => tsession.id !== session.id);
             });
 
-            server.addEventListener('error', (error) => {
-                console.log('connection error', error);
+            ws.addEventListener('error', (error) => {
+                console.log(`Session ${session.id} errored`, error);
                 this.sessions = this.sessions.filter(tsession => tsession.id !== session.id);
             });
 
@@ -155,17 +215,25 @@ export class Items {
 
             return new Response(null, {
                 status: 101,
-                webSocket: client,
+                webSocket: clientWsConnection,
+            });
+        });
+
+        api.get("/:id/export", async (c) => {
+            const exportId = await nanoid();
+            c.env.exports.put(exportId, JSON.stringify(this.items));
+            return c.json({
+                id: exportId,
             });
         });
 
         api.get('/:id', async (c) => {
-            return c.json(this.value);
+            return c.json(this.items);
         });
     }
 
     async fetch(request: Request) {
-        return this.app.fetch(request);
+        return this.app.fetch(request, this.env);
     }
 
 }
