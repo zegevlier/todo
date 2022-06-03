@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { nanoid } from "nanoid";
 
-type Todo = {
+type Item = {
     value: string;
     checked: boolean;
     id: string;
@@ -13,11 +13,18 @@ type Session = {
     id: string;
 }
 
-export class Todos {
+export class Items {
     state: DurableObjectState;
     app: Hono = new Hono();
-    value: Todo[] = [];
+    value: Item[] = [];
     sessions: Session[] = [];
+
+    resyncClient(ws: WebSocket) {
+        ws.send(JSON.stringify({
+            type: 'set',
+            data: this.value,
+        }));
+    }
 
     async broadcast(value: any, dontSendTo: Session | null = null) {
         this.sessions = this.sessions.filter(session => {
@@ -69,43 +76,67 @@ export class Todos {
                 const message = JSON.parse(event.data as string);
                 console.log(message);
                 if (message.type === 'get') {
-                    setTimeout(() => {
-
-                        server.send(JSON.stringify({
-                            type: 'set',
-                            data: this.value
-                        }));
-                    }, 1000);
+                    this.resyncClient(server);
                 }
                 if (message.type === 'update') {
-                    this.value = this.value.map(todo => todo.id === message.data.id ? { ...todo, ...message.data } : todo);
+                    const newValue = this.value.map(item => item.id === message.data.id ? { ...item, ...message.data } : item);
+                    if (newValue === this.value) {
+                        // The client is probably desynced
+                        this.resyncClient(server);
+                        return;
+                    }
+                    this.value = newValue;
                     await this.state.storage.put("value", this.value);
                     this.broadcast({
                         'type': 'update', 'data': message.data
                     });
                 }
+                if (message.type === 'order') {
+                    // Changes the order of the items, id goes from oldIdx to newIdx
+                    // if id is not at oldIdx, send back set.
+                    const oldIdx = this.value.findIndex(item => item.id === message.data.id);
+                    if (oldIdx !== message.data.oldIdx) {
+                        this.resyncClient(server);
+                        return;
+                    }
+                    const newValue = [...this.value];
+                    const [removed] = newValue.splice(message.data.oldIdx, 1);
+                    newValue.splice(message.data.newIdx, 0, removed);
+                    this.value = newValue;
+                    await this.state.storage.put("value", this.value);
+
+                    this.broadcast({
+                        'type': 'order', 'data': {
+                            id: message.data.id,
+                            oldIdx: message.data.oldIdx,
+                            newIdx: message.data.newIdx
+                        }
+                    });
+                }
                 if (message.type === 'add') {
                     const id = await nanoid();
-                    const todo = {
+                    const newItem = {
                         'id': id,
                         'value': message.value,
                         'checked': false
                     };
-                    this.value.push(todo);
+                    this.value.push(newItem);
                     await this.state.storage.put("value", this.value);
                     this.broadcast({
-                        'type': 'add', 'data': todo
+                        'type': 'add', 'data': newItem
                     });
                 }
                 if (message.type === 'remove') {
-                    const todo = this.value.find(t => t.id === message.id);
-                    if (todo) {
-                        this.value = this.value.filter(t => t.id !== message.id);
-                        await this.state.storage.put("value", this.value);
-                        this.broadcast({
-                            'type': 'remove', 'data': todo
-                        });
+                    const item = this.value.find(t => t.id === message.id);
+                    if (!item) {
+                        this.resyncClient(server);
+                        return;
                     }
+                    this.value = this.value.filter(t => t.id !== message.id);
+                    await this.state.storage.put("value", this.value);
+                    this.broadcast({
+                        'type': 'remove', 'data': item
+                    });
                 }
 
             });
@@ -131,19 +162,6 @@ export class Todos {
         api.get('/:id', async (c) => {
             return c.json(this.value);
         });
-
-        api.get('/:id/seed', async (c) => {
-            const id = c.req.param('id');
-
-            this.value = [
-                { value: "Hello", checked: false, id: nanoid() },
-                { value: "World", checked: true, id: nanoid() },
-            ];
-
-            c.event?.waitUntil(this.state.storage.put("value", this.value));
-
-            return c.json(this.value);
-        })
     }
 
     async fetch(request: Request) {

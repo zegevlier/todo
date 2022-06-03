@@ -4,11 +4,11 @@ name = "worker"
 
 [durable_objects]
 bindings = [
-  {name = "TODO", class_name = "Todo"},
+  {name = "ITEMS", class_name = "Items"},
 ]
 
 [[migrations]]
-new_classes = ["Todo"]
+new_classes = ["Items"]
 tag = "v1"
 
 [miniflare]

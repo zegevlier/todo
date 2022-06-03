@@ -4,20 +4,25 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 
 import { EditText } from "react-edit-text";
 
-import { DragDropContext } from "react-beautiful-dnd";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "react-beautiful-dnd";
 
-import "./TodoList.scss";
+import "./ItemList.scss";
 
-type Todo = {
+type Item = {
   value: string;
   checked: boolean;
   id: string;
 };
 
-function TodoList() {
+function ItemList() {
   let { id } = useParams();
 
-  const [todos, setTodos] = useState<Todo[]>([]);
+  const [items, setItems] = useState<Item[]>([]);
   const [adding, setAdding] = useState<string>("");
 
   const { sendJsonMessage, readyState } = useWebSocket(
@@ -32,20 +37,20 @@ function TodoList() {
       onMessage: (message: MessageEvent) => {
         const msg = JSON.parse(message.data);
         if (msg instanceof Array) {
-          setTodos(msg);
+          setItems(msg);
         } else {
           if (msg.type === "add") {
-            setTodos([...todos, msg.data]);
+            setItems([...items, msg.data]);
           } else if (msg.type === "remove") {
-            setTodos(todos.filter((todo) => todo.id !== msg.data.id));
+            setItems(items.filter((item) => item.id !== msg.data.id));
           } else if (msg.type === "update") {
-            setTodos(
-              todos.map((todo) =>
-                todo.id === msg.data.id ? { ...todo, ...msg.data } : todo
+            setItems(
+              items.map((item) =>
+                item.id === msg.data.id ? { ...item, ...msg.data } : item
               )
             );
           } else if (msg.type === "set") {
-            setTodos(msg.data);
+            setItems(msg.data);
           } else {
             console.error("Unknown message type:", msg.type, msg);
           }
@@ -73,7 +78,7 @@ function TodoList() {
   useEffect(() => {
     fetch(`${process.env.REACT_APP_API_URL}/${id}`)
       .then((res) => res.json())
-      .then((data) => setTodos(data));
+      .then((data) => setItems(data));
   }, [id]);
 
   function onCheckboxChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -109,14 +114,24 @@ function TodoList() {
     setAdding("");
   }
 
+  function onDragEnd(e: DropResult) {
+    if (!e.destination) {
+      return;
+    }
+    const newItems = [...items];
+    const [removed] = newItems.splice(e.source.index, 1);
+    newItems.splice(e.destination.index, 0, removed);
+    setItems(newItems);
+  }
+
   return (
-    <div className="bg-slate-50 h-screen">
+    <div className="h-screen bg-slate-50 overflow-hidden">
       <nav className="px-1 sm:px-2 py-2 dark:bg-gray-800 w-screen">
-        <div className="container flex flex-row gap-1 items-center">
+        <div className="flex gap-1 items-center">
           <p className="text-3xl text-white order-first ml-0 mr-auto">
             Shopping list
           </p>
-          <div id="pushDownButton" title={connectionStatus} className="order-2">
+          <div id="pushDownButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
               <button
                 onClick={() => sendJsonMessage({ type: "push_down" })}
@@ -127,7 +142,7 @@ function TodoList() {
               </button>
             </div>
           </div>
-          <div id="refreshButton" title={connectionStatus} className="order-3">
+          <div id="refreshButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
               <button
                 onClick={() => sendJsonMessage({ type: "get" })}
@@ -155,53 +170,104 @@ function TodoList() {
         </div>
       </nav>
 
-      <div id="todos" className="pt-2 text-xl w-screen fixed">
-        {todos.map((todo) => (
-          <div className="flex flex-row items-center" key={todo.id}>
-            <input
-              type="checkbox"
-              className="scale-125 mx-2"
-              id={"cb" + todo.id}
-              checked={todo.checked}
-              onChange={onCheckboxChange}
-            />
-            <label htmlFor={"cb" + todo.id} className="visuallyhidden">
-              {todo.value}
-            </label>
-            <EditText
-              className={`w-max ${todo.checked ? "strike" : ""}`}
-              inputClassName="w-screen mr-1"
-              defaultValue={todo.value}
-              onSave={(value) => {
-                sendJsonMessage({
-                  type: "update",
-                  data: {
-                    id: todo.id,
-                    value: value.value,
-                  },
-                });
-              }}
-            />
-            <button
-              className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto"
-              id={"rem" + todo.id}
-              onClick={onRemoveclick}
-              aria-label="Remove"
-            >
-              X
-            </button>
-            <hr className="h-1" />
-          </div>
-        ))}
+      <div
+        id="items"
+        className="bg-slate-50 pt-2 text-xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
+        style={{ maxHeight: "88vh" }}
+      >
+        <DragDropContext
+          onDragEnd={onDragEnd}
+          onDragStart={(e) => {
+            document.getSelection()?.empty();
+            if (
+              document.activeElement &&
+              document.activeElement.id === "inputelement" &&
+              document.activeElement.getAttribute("type") === "text"
+            ) {
+              // Element is probably the input field of an item
+              const el = document.activeElement as HTMLInputElement;
+              el.blur();
+            }
+          }}
+        >
+          <Droppable droppableId="droppable">
+            {(provided) => (
+              <div
+                id="droppable"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                {items.map((item, index) => (
+                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                    {(provided) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <div
+                          className="flex flex-row items-center"
+                          key={item.id}
+                        >
+                          <input
+                            type="checkbox"
+                            className="scale-125 mx-2"
+                            id={"cb" + item.id}
+                            checked={item.checked}
+                            onChange={onCheckboxChange}
+                          />
+                          <label
+                            htmlFor={"cb" + item.id}
+                            className="visuallyhidden"
+                          >
+                            {item.value}
+                          </label>
+                          <EditText
+                            style={{
+                              overflowWrap: "break-word",
+                            }}
+                            className={`${item.checked ? "strike" : ""}`}
+                            inputClassName="w-screen mr-1"
+                            defaultValue={item.value}
+                            id="inputelement"
+                            onSave={(value) => {
+                              sendJsonMessage({
+                                type: "update",
+                                data: {
+                                  id: item.id,
+                                  value: value.value,
+                                },
+                              });
+                            }}
+                          />
+                          <button
+                            className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto"
+                            id={"rem" + item.id}
+                            onClick={onRemoveclick}
+                            aria-label="Remove"
+                          >
+                            X
+                          </button>
+                          <hr className="h-1" />
+                        </div>
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
+        <div className="h-10"></div>
       </div>
 
-      <footer className="fixed bottom-0 w-screen m-2">
+      <footer className="fixed bottom-0 w-screen border-t-2 bg-slate-100">
         <form onSubmit={onSubmit} className="flex flex-row">
           <input
             className="w-screen border-grey-200 focus:border-blue-300 focus:outline-none border-2 m-2 p-0.5"
             type="text"
             value={adding}
-            id="addTodoBox"
+            id="addItemBox"
             onChange={(e) => {
               setAdding(e.target.value);
             }}
@@ -211,7 +277,7 @@ function TodoList() {
             type="submit"
             value="Add"
           />
-          <label htmlFor="addTodoBox" className="visuallyhidden">
+          <label htmlFor="addItemBox" className="visuallyhidden">
             Add new item
           </label>
         </form>
@@ -220,4 +286,4 @@ function TodoList() {
   );
 }
 
-export default TodoList;
+export default ItemList;

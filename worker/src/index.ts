@@ -1,9 +1,9 @@
 import { Hono } from "hono";
 
-export { Todos as Todo } from "./todo";
+export { Items } from "./item";
 
 interface Env {
-  TODO: DurableObjectNamespace;
+  ITEMS: DurableObjectNamespace;
 }
 
 const app = new Hono<Env>();
@@ -14,15 +14,15 @@ api.get('/', async (c) => {
 })
 
 api.get("/:id", async (c) => {
-  const id = c.env.TODO.idFromName(c.req.param("id"));
-  const todo = await c.env.TODO.get(id);
-  return todo.fetch(c.req as Request<string>);
+  const id = c.env.ITEMS.idFromName(c.req.param("id"));
+  const itemStub = await c.env.ITEMS.get(id);
+  return itemStub.fetch(c.req as Request<string>);
 });
 
 api.get("/:id/*", async (c) => {
-  const id = c.env.TODO.idFromName(c.req.param("id"));
-  const todo = await c.env.TODO.get(id);
-  return todo.fetch(c.req as Request<string>);
+  const id = c.env.ITEMS.idFromName(c.req.param("id"));
+  const itemStub = await c.env.ITEMS.get(id);
+  return itemStub.fetch(c.req as Request<string>);
 });
 
 export default app;
