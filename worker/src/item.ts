@@ -24,6 +24,7 @@ export class Items {
     items: Item[] = [];
     sessions: Session[] = [];
     env: Env;
+    name: string | undefined;
 
     resyncClient(ws: WebSocket) {
         ws.send(JSON.stringify({
@@ -52,6 +53,7 @@ export class Items {
 
         this.state.blockConcurrencyWhile(async () => {
             this.items = await this.state.storage.get("value") || [];
+            this.name = await this.state.storage.get("name") || undefined;
         });
 
         this.app.use('/api/*', async (c, next) => {
@@ -61,7 +63,35 @@ export class Items {
             c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
         });
 
+        this.app.use("*", async (c, next) => {
+            if (this.name || new URL(c.req.url).pathname.startsWith("/api/new")) {
+                await next();
+            } else {
+                const upgradeHeader = c.req.headers.get('Upgrade');
+                if (!upgradeHeader || upgradeHeader !== 'websocket') {
+                    return c.json({ 'error': 'not found' }, 404);
+                }
+                const [clientWsConnection, ws] = Object.values(new WebSocketPair());
+                ws.accept();
+                ws.close(1000, "Not found");
+                return new Response(null, {
+                    status: 101,
+                    webSocket: clientWsConnection,
+                });
+            }
+        });
+
         const api = this.app.route("/api");
+
+        api.post("/new", async (c) => {
+            const data: any = await c.req.json();
+            if (!data.name) {
+                return c.json({ 'error': 'name is required' }, 400);
+            }
+            this.name = data.name;
+            await this.state.storage.put("name", data.name);
+            return c.json({ 'ok': true, 'id': data.id });
+        });
 
         api.get("/:id/ws", async (c) => {
             const upgradeHeader = c.req.headers.get('Upgrade');
@@ -228,7 +258,10 @@ export class Items {
         });
 
         api.get('/:id', async (c) => {
-            return c.json(this.items);
+            return c.json({
+                'name': this.name,
+                'items': this.items,
+            });
         });
     }
 

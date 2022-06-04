@@ -20,12 +20,14 @@ type Item = {
 };
 
 function ItemList() {
-  let { id } = useParams();
+  const { id } = useParams();
 
   const [items, setItems] = useState<Item[]>([]);
   const [adding, setAdding] = useState<string>("");
   const [shareLink, setShareLink] = useState<string>("");
   const [shareDropdownShown, setShareDropdownShown] = useState<boolean>(false);
+  const [name, setName] = useState<string>("");
+  const [error, setError] = useState<string>("");
 
   const { sendJsonMessage, readyState } = useWebSocket(
     `${process.env.REACT_APP_WS_URL}/${id}/ws`,
@@ -89,9 +91,25 @@ function ItemList() {
   }[readyState];
 
   useEffect(() => {
+    if (!id) {
+      setError("No ID specified");
+      return;
+    }
     fetch(`${process.env.REACT_APP_API_URL}/${id}`)
       .then((res) => res.json())
-      .then((data) => setItems(data));
+      .then((data) => {
+        setName(data.name);
+        setItems(data.items);
+        let recentItems: { id: string; name: string }[] = JSON.parse(
+          localStorage.getItem("recent") || "[]"
+        );
+        recentItems = recentItems.filter((item) => item.id !== id);
+        recentItems.unshift({ id, name: data.name });
+        localStorage.setItem("recent", JSON.stringify(recentItems));
+      })
+      .catch((err) => {
+        setError("404 list not found");
+      });
   }, [id]);
 
   function onCheckboxChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -183,13 +201,13 @@ function ItemList() {
     setShareLink(url);
   }
 
-  return (
+  return error ? (
+    <div>{error}</div>
+  ) : (
     <div className="h-screen bg-slate-50 overflow-hidden">
       <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
         <div className="flex gap-1 items-center">
-          <p className="text-3xl text-white order-first ml-0 mr-auto">
-            Shopping list
-          </p>
+          <p className="text-3xl text-white order-first ml-0 mr-auto">{name}</p>
           <div id="shareButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
               <button
@@ -326,9 +344,9 @@ function ItemList() {
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  fill-rule="evenodd"
+                  fillRule="evenodd"
                   d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                  clip-rule="evenodd"
+                  clipRule="evenodd"
                 ></path>
               </svg>
             </button>
