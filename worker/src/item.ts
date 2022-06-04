@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { nanoid } from "nanoid";
+import { nanoid, customAlphabet } from "nanoid";
 
 type Item = {
     value: string;
@@ -90,6 +90,10 @@ export class Items {
             }
             this.name = data.name;
             await this.state.storage.put("name", data.name);
+            if (data.value) {
+                this.items = data.value;
+                await this.state.storage.put("value", data.value);
+            }
             return c.json({ 'ok': true, 'id': data.id });
         });
 
@@ -254,6 +258,20 @@ export class Items {
             c.env.exports.put(exportId, JSON.stringify(this.items));
             return c.json({
                 id: exportId,
+            });
+        });
+
+        api.get("/:id/clone", async (c) => {
+            const cloneId = await customAlphabet("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ123456789")(10);
+            const stubId = c.env.items.idFromName(cloneId);
+            const itemStub = await c.env.items.get(stubId);
+            return itemStub.fetch("https://do.fake/api/new", {
+                method: "POST",
+                body: JSON.stringify({
+                    id: cloneId,
+                    name: this.name,
+                    value: this.items,
+                }),
             });
         });
 

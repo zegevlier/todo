@@ -100,11 +100,16 @@ function ItemList() {
       .then((data) => {
         setName(data.name);
         setItems(data.items);
-        let recentItems: { id: string; name: string }[] = JSON.parse(
+        let recentItems: RecentType[] = JSON.parse(
           localStorage.getItem("recent") || "[]"
         );
         recentItems = recentItems.filter((item) => item.id !== id);
-        recentItems.unshift({ id, name: data.name });
+        recentItems.unshift({
+          id,
+          name: data.name,
+          date: new Date().toString(),
+        });
+        recentItems = recentItems.slice(0, 10);
         localStorage.setItem("recent", JSON.stringify(recentItems));
       })
       .catch((err) => {
@@ -207,6 +212,28 @@ function ItemList() {
     <div className="h-screen bg-slate-50 overflow-hidden">
       <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
         <div className="flex gap-1 items-center">
+          <button
+            className="order-first text-white rounded-md pr-1 py-2.5"
+            aria-label="Go back home"
+            onClick={() => {
+              window.location.href = "/";
+            }}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M11 17l-5-5m0 0l5-5m-5 5h12"
+              />
+            </svg>
+          </button>
           <p className="text-3xl text-white order-first ml-0 mr-auto">{name}</p>
           <div id="shareButton" title={connectionStatus} className="">
             <div className="relative active:scale-95 active:duration-75 ">
@@ -380,85 +407,95 @@ function ItemList() {
         </div>
       </div>
 
-      <div
-        id="items"
-        className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
-        style={{ maxHeight: "88vh" }}
-      >
-        <DragDropContext
-          onDragEnd={onDragEnd}
-          onDragStart={(e) => {
-            document.getSelection()?.empty();
-            if (
-              document.activeElement &&
-              document.activeElement.id === "inputelement" &&
-              document.activeElement.getAttribute("type") === "text"
-            ) {
-              // Element is probably the input field of an item
-              const el = document.activeElement as HTMLInputElement;
-              el.blur();
-            }
-          }}
+      {items.length > 0 ? (
+        <div
+          id="items"
+          className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
+          style={{ maxHeight: "88vh" }}
         >
-          <Droppable droppableId="droppable">
-            {(provided) => (
-              <div {...provided.droppableProps} ref={provided.innerRef}>
-                {items.map((item, index) => (
-                  <Draggable key={item.id} draggableId={item.id} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
+          <DragDropContext
+            onDragEnd={onDragEnd}
+            onDragStart={(e) => {
+              document.getSelection()?.empty();
+              if (
+                document.activeElement &&
+                document.activeElement.id === "inputelement" &&
+                document.activeElement.getAttribute("type") === "text"
+              ) {
+                // Element is probably the input field of an item
+                const el = document.activeElement as HTMLInputElement;
+                el.blur();
+              }
+            }}
+          >
+            <Droppable droppableId="droppable">
+              {(provided) => (
+                <div {...provided.droppableProps} ref={provided.innerRef}>
+                  {items.map((item, index) => (
+                    <Draggable
+                      key={item.id}
+                      draggableId={item.id}
+                      index={index}
+                    >
+                      {(provided) => (
                         <div
-                          className="flex flex-row items-center"
-                          key={item.id}
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
                         >
-                          <input
-                            type="checkbox"
-                            className="scale-125 mx-2"
-                            id={"cb" + item.id}
-                            checked={item.checked}
-                            onChange={onCheckboxChange}
-                          />
-                          <label
-                            htmlFor={"cb" + item.id}
-                            className="visuallyhidden"
+                          <div
+                            className="flex flex-row items-center"
+                            key={item.id}
                           >
-                            {item.value}
-                          </label>
-                          <EditText
-                            style={{
-                              overflowWrap: "break-word",
-                            }}
-                            className={`${item.checked ? "strike" : ""}`}
-                            inputClassName="w-screen mr-1"
-                            defaultValue={item.value}
-                            id="inputelement"
-                            onSave={(v) => onEditBoxSave(v, item.id)}
-                          />
-                          <button
-                            className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto"
-                            id={"rem" + item.id}
-                            onClick={onRemoveclick}
-                            aria-label="Remove"
-                          >
-                            X
-                          </button>
-                          <hr className="h-1" />
+                            <input
+                              type="checkbox"
+                              className="scale-125 mx-2"
+                              id={"cb" + item.id}
+                              checked={item.checked}
+                              onChange={onCheckboxChange}
+                            />
+                            <label
+                              htmlFor={"cb" + item.id}
+                              className="visuallyhidden"
+                            >
+                              {item.value}
+                            </label>
+                            <EditText
+                              style={{
+                                overflowWrap: "break-word",
+                              }}
+                              className={`${item.checked ? "strike" : ""}`}
+                              inputClassName="w-screen mr-1"
+                              defaultValue={item.value}
+                              id="inputelement"
+                              onSave={(v) => onEditBoxSave(v, item.id)}
+                            />
+                            <button
+                              className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto"
+                              id={"rem" + item.id}
+                              onClick={onRemoveclick}
+                              aria-label="Remove"
+                            >
+                              X
+                            </button>
+                            <hr className="h-1" />
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
-        <div className="h-10"></div>
-      </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+          <div className="h-10"></div>
+        </div>
+      ) : (
+        <div className="h-20 text-2xl items-end flex justify-center w-screen text-center">
+          <p>No items, create your first below!</p>
+        </div>
+      )}
 
       <footer className="fixed bottom-0 w-screen border-t-2 bg-slate-100">
         <form onSubmit={onSubmit} className="flex flex-row">
