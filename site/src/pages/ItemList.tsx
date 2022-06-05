@@ -563,7 +563,7 @@ function ItemList() {
                               onSave={(v) => onEditBoxSave(v, item.id)}
                             />
                             <button
-                              className="px-1 mx-2 text-red-500 rounded-md ml-auto hover:text-red-600"
+                              className="px-1 mx-2 text-red-500 rounded-md ml-auto hover:text-red-600 dark:text-red-600 hover:dark:text-red-500"
                               id={"rem" + item.id}
                               onClick={onRemoveclick}
                               aria-label="Remove"
@@ -604,10 +604,10 @@ function ItemList() {
       {error ? (
         <div></div>
       ) : (
-        <footer className="fixed bottom-0 w-screen border-t-2 bg-slate-100">
+        <footer className="fixed bottom-0 w-screen border-t-2 bg-slate-100 dark:bg-slate-700 dark:border-gray-800">
           <form onSubmit={onSubmit} className="flex flex-row">
             <input
-              className="w-screen border-grey-200 focus:border-blue-500 focus:outline-none border-2 m-2 p-0.5"
+              className="w-screen border-gray-200 focus:border-blue-500 focus:outline-none border-2 m-2 p-0.5 dark:bg-slate-400 dark:border-gray-800"
               type="text"
               value={adding}
               id="addItemBox"

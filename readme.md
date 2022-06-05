@@ -6,9 +6,12 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 
 - Automatic syncing between clients
 - Read-only, cloned and live-edit share
-- Change order + add/remove/edit items
-- Mark items as done (obviously)
+- Change order with drag-and-drop
+- Edit items by clicking on them
+- Responsive design
 - Recently opened lists
+- Dark mode
+- add/remove/complete items (obviously)
 - Custom named lists
 
 ## Built with
@@ -22,8 +25,6 @@ This project was made for the [Cloudflare Developer Challenge](https://challenge
 ## Plans
 
 - fix alignment of status indicator on small devices
-- add dark mode
-- communicate more clearly that you can edit and reorder entries
 - add list name changing
 - add favorite lists
 - make into PWA (if time permits)
