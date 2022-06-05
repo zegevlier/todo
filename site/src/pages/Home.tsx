@@ -11,8 +11,14 @@ function Home() {
       <div className="w-full max-w-4xl rounded-md border-2 border-gray-100 bg-white p-10 pb-8">
         <div className="flex flex-col items-center">
           <h3 className="mt-2 max-w-2xl text-center text-2xl font-bold leading-tight sm:text-3xl md:text-4xl md:leading-tight">
-            Create a new todo, shopping or whatever list!
+            Create a new checklist!
           </h3>
+          <p className="mt-2 text-lg text-center">
+            Real-time colaborative checklist app. This can be used for all sorts
+            of things, like todos and shopping lists! It's easy to use, and it's
+            free. No sign up needed! Built on Cloudflare Workers, Pages, DO and
+            KV.
+          </p>
           <form
             className="mx-auto mt-4 flex w-full max-w-md flex-col gap-3 sm:flex-row sm:gap-0"
             onSubmit={(e) => {
@@ -54,9 +60,11 @@ function Home() {
             <table className="w-full">
               <tbody>
                 {recents.length > 0 ? (
-                  recents.map((r) => (
+                  recents.map((r, idx) => (
                     <tr
-                      className="border-b text-lg"
+                      className={`text-lg ${
+                        idx === recents.length - 1 ? "" : "border-b"
+                      }`}
                       aria-label="Recent lists"
                       onClick={() => {
                         window.location.href = `/${r.id}`;

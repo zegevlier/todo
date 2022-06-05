@@ -48,13 +48,13 @@ api.post("/new", async (c) => {
   });
 });
 
-api.get("/:id", async (c) => {
+api.all("/:id", async (c) => {
   const id = c.env.items.idFromName(c.req.param("id"));
   const itemStub = await c.env.items.get(id);
   return itemStub.fetch(c.req as Request<string>);
 });
 
-api.get("/:id/*", async (c) => {
+api.all("/:id/*", async (c) => {
   const id = c.env.items.idFromName(c.req.param("id"));
   const itemStub = await c.env.items.get(id);
   return itemStub.fetch(c.req as Request<string>);

@@ -59,11 +59,13 @@ export class Items {
         this.app.use('/api/*', async (c, next) => {
             // Add cors headers, should probably be turned off in production
             await next();
-            try {
-                c.res.headers.append('Access-Control-Allow-Origin', '*');
-                c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-            } catch {
-                console.log("Error adding cors headers");
+            if (c.res.headers.get('Access-Control-Allow-Origin') !== "*") {
+                try {
+                    c.res.headers.append('Access-Control-Allow-Origin', '*');
+                    c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+                } catch {
+                    console.log("Error adding cors headers");
+                }
             }
         });
 
@@ -257,7 +259,7 @@ export class Items {
             });
         });
 
-        api.get("/:id/export", async (c) => {
+        api.post("/:id/export", async (c) => {
             const exportId = await nanoid();
             c.env.exports.put(exportId, JSON.stringify(this.items));
             return c.json({
@@ -265,7 +267,7 @@ export class Items {
             });
         });
 
-        api.get("/:id/clone", async (c) => {
+        api.post("/:id/clone", async (c) => {
             console.log("Cloning");
             const cloneId = await customAlphabet("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ123456789")(10);
             console.log(cloneId);
@@ -281,6 +283,18 @@ export class Items {
                     value: this.items,
                 }),
             });
+        });
+
+        api.post("/:id/purge", async (c) => {
+            this.items = [];
+            this.state.storage.put("value", this.items)
+            this.broadcast({
+                'type': 'set',
+                'data': this.items
+            });
+            return c.json({
+                success: "ok"
+            })
         });
 
         api.get('/:id', async (c) => {

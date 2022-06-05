@@ -1,6 +1,6 @@
 {
-    "short_name": "Todo app",
-    "name": "Zeg's Todo and shopping list app",
+    "short_name": "Checklist app",
+    "name": "Zeg's checklist app",
     "icons": [{
             "src": "favicon.ico",
             "sizes": "64x64 32x32 24x24 16x16",

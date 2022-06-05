@@ -62,7 +62,7 @@ function ReadOnlyItemList() {
             </label>
             <p
               style={{
-                overflowWrap: "break-word",
+                overflowWrap: "anywhere",
               }}
               className={`${item.checked ? "strike" : ""}`}
               id="inputelement"
