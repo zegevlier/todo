@@ -11,7 +11,6 @@ function App() {
     <div>
       <Helmet>
         <title>Todo & Shopping list app</title>
-        <link rel="canonical" href="https://todo.note.autos/" />
         <meta name="description" content="Todo and shopping list app" />
       </Helmet>
       <Router>

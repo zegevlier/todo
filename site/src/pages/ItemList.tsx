@@ -209,10 +209,11 @@ function ItemList() {
   }
 
   function deleteAll() {
-    window.confirm("Are you sure you want to delete all items?") &&
+    if (window.confirm("Are you sure you want to delete all items?")) {
       fetch(`${process.env.REACT_APP_API_URL}/${id}/purge`, {
         method: "POST",
       });
+    }
   }
 
   return (
@@ -493,7 +494,7 @@ function ItemList() {
       ) : items.length > 0 ? (
         <div
           id="items"
-          className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-scroll overflow-x-hidden mb-10"
+          className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-auto overflow-x-hidden mb-10"
           style={{ maxHeight: "88vh" }}
         >
           <DragDropContext
