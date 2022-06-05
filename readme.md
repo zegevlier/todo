@@ -18,3 +18,15 @@ The website was built with React, hosted on Pages. For the backend, I used Cloud
 ## Built for
 
 This project was made for the [Cloudflare Developer Challenge](https://challenge.developers.cloudflare.com/) of Spring 2022.
+
+## Plans
+
+- fix 404 page not working when deployed
+- add 404 page to read only
+- recents 404 bugfix
+- fix alignment of status indicator on small devices
+- redesign add and remove button
+- communicate more clearly that you can edit and reorder entries
+- add list name changing
+- add favorite lists
+- make into PWA (if time permits)
