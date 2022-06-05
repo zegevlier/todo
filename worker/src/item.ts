@@ -59,8 +59,12 @@ export class Items {
         this.app.use('/api/*', async (c, next) => {
             // Add cors headers, should probably be turned off in production
             await next();
-            c.res.headers.append('Access-Control-Allow-Origin', '*');
-            c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            try {
+                c.res.headers.append('Access-Control-Allow-Origin', '*');
+                c.res.headers.append('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+            } catch {
+                console.log("Error adding cors headers");
+            }
         });
 
         this.app.use("*", async (c, next) => {
@@ -262,14 +266,18 @@ export class Items {
         });
 
         api.get("/:id/clone", async (c) => {
+            console.log("Cloning");
             const cloneId = await customAlphabet("abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ123456789")(10);
+            console.log(cloneId);
             const stubId = c.env.items.idFromName(cloneId);
             const itemStub = await c.env.items.get(stubId);
-            return itemStub.fetch("https://do.fake/api/new", {
+            const newNameSuffix = " (clone)";
+            const newName = this.name?.slice(0, 25 - newNameSuffix.length) + newNameSuffix;
+            return itemStub.fetch("https://todo.note.autos/api/new", {
                 method: "POST",
                 body: JSON.stringify({
                     id: cloneId,
-                    name: this.name,
+                    name: newName,
                     value: this.items,
                 }),
             });

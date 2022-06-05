@@ -1,6 +1,12 @@
 compatibility_date = "2022-05-28"
 main = "src/index.ts"
-name = "worker"
+name = "todo"
+usage_model = "unbound"
+workers_dev = false
+
+routes = [
+  {pattern = "todo.note.autos/api*", zone_id = "4a7660e8fba36d03efbc7d139e5efc30"},
+]
 
 kv_namespaces = [
   {binding = "exports", id = "2c22c3fa276142c180fded963195bbc0", preview_id = "cc0394082ce84700ba4eeff36fec1280"},
@@ -13,7 +19,7 @@ bindings = [
 
 [[migrations]]
 new_classes = ["Items"]
-tag = "v1"
+tag = "v2"
 
 [miniflare]
 debug = true

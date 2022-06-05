@@ -4,6 +4,8 @@ import useWebSocket, { ReadyState } from "react-use-websocket";
 
 import { EditText, onSaveProps } from "react-edit-text";
 
+import Helmet from "react-helmet";
+
 import {
   DragDropContext,
   Droppable,
@@ -210,6 +212,9 @@ function ItemList() {
     <div>{error}</div>
   ) : (
     <div className="h-screen bg-slate-50 overflow-hidden">
+      <Helmet>
+        <title>{name}</title>
+      </Helmet>
       <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
         <div className="flex gap-1 items-center">
           <button
