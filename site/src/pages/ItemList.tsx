@@ -244,7 +244,7 @@ function ItemList() {
               />
             </svg>
           </button>
-          {error ? (
+          {error.length > 0 ? (
             <p className="md:text-3xl text-xl text-white order-first ml-0 mr-auto">
               {error}
             </p>
@@ -480,7 +480,7 @@ function ItemList() {
           </div>
         </div>
       </div>
-      {error ? (
+      {error.length > 0 ? (
         <div className="h-20 text-2xl items-end flex justify-center w-screen text-center">
           <p>
             This list doesn't couldn't be loaded, please go back{" "}
