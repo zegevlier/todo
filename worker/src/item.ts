@@ -75,7 +75,9 @@ export class Items {
             } else {
                 const upgradeHeader = c.req.headers.get('Upgrade');
                 if (!upgradeHeader || upgradeHeader !== 'websocket') {
-                    return c.json({ 'error': 'not found' }, 404);
+                    return c.json({ 'error': '404 List not found' }, 404, {
+                        'Access-Control-Allow-Origin': '*',
+                    });
                 }
                 const [clientWsConnection, ws] = Object.values(new WebSocketPair());
                 ws.accept();
@@ -261,7 +263,10 @@ export class Items {
 
         api.post("/:id/export", async (c) => {
             const exportId = await nanoid();
-            c.env.exports.put(exportId, JSON.stringify(this.items));
+            c.env.exports.put(exportId, JSON.stringify({
+                'data': this.items,
+                'name': this.name,
+            }));
             return c.json({
                 id: exportId,
             });

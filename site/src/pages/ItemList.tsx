@@ -100,22 +100,23 @@ function ItemList() {
     fetch(`${process.env.REACT_APP_API_URL}/${id}`)
       .then((res) => res.json())
       .then((data) => {
-        setName(data.name);
-        setItems(data.items);
-        let recentItems: RecentType[] = JSON.parse(
-          localStorage.getItem("recent") || "[]"
-        );
-        recentItems = recentItems.filter((item) => item.id !== id);
-        recentItems.unshift({
-          id,
-          name: data.name,
-          date: new Date().toString(),
-        });
-        recentItems = recentItems.slice(0, 10);
-        localStorage.setItem("recent", JSON.stringify(recentItems));
-      })
-      .catch((err) => {
-        setError("404 list not found");
+        if (!data.error) {
+          setName(data.name);
+          setItems(data.items);
+          let recentItems: RecentType[] = JSON.parse(
+            localStorage.getItem("recent") || "[]"
+          );
+          recentItems = recentItems.filter((item) => item.id !== id);
+          recentItems.unshift({
+            id,
+            name: data.name,
+            date: new Date().toString(),
+          });
+          recentItems = recentItems.slice(0, 10);
+          localStorage.setItem("recent", JSON.stringify(recentItems));
+        } else {
+          setError(data.error);
+        }
       });
   }, [id]);
 
@@ -199,10 +200,10 @@ function ItemList() {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url);
     }
-    if (navigator.share && navigator.canShare()) {
+    if (typeof navigator.canShare === "function" && navigator.canShare()) {
       navigator.share({
         url: url,
-        title: "List",
+        title: "Checklist",
       });
     }
     setShareLink(url);
@@ -465,6 +466,11 @@ function ItemList() {
                     className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 dark:bg-gray-600 dark:border-gray-500 dark:placeholder-gray-400 dark:text-white"
                     placeholder=""
                     readOnly
+                    onClick={() => {
+                      (
+                        document.getElementById("link") as HTMLInputElement
+                      )?.select();
+                    }}
                     value={shareLink}
                   />
                 </div>

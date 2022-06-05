@@ -21,9 +21,6 @@ This project was made for the [Cloudflare Developer Challenge](https://challenge
 
 ## Plans
 
-- fix 404 page not working when deployed
-- add 404 page to read only
-- recents 404 bugfix
 - fix alignment of status indicator on small devices
 - redesign add and remove button
 - communicate more clearly that you can edit and reorder entries

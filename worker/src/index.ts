@@ -20,11 +20,13 @@ api.get("/export/:id2", async (c) => {
   const id = c.req.param('id2');
   const item = await c.env.exports.get(id);
   if (!item) {
-    return c.json({ 'error': 'not found' }, 404);
+    return c.json({ 'error': '404 List not found' }, 404);
   } else {
+    const parsedItem = JSON.parse(item);
     return c.json({
       id: id,
-      data: JSON.parse(item),
+      data: parsedItem.data,
+      name: parsedItem.name,
     });
   }
 });
