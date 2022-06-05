@@ -218,7 +218,7 @@ function ItemList() {
   }
 
   return (
-    <div className="h-screen bg-slate-50 overflow-hidden">
+    <div className="h-screen bg-slate-50 dark:bg-slate-600 overflow-hidden">
       <Helmet>
         <title>{name}</title>
       </Helmet>
@@ -500,7 +500,7 @@ function ItemList() {
       ) : items.length > 0 ? (
         <div
           id="items"
-          className="bg-slate-50 pt-2 lg:text-xl text-3xl w-screen overflow-y-auto overflow-x-hidden mb-10"
+          className="bg-slate-50 dark:bg-slate-600 dark:text-white pt-2 lg:text-xl text-3xl w-screen overflow-y-auto overflow-x-hidden mb-10"
           style={{ maxHeight: "88vh" }}
         >
           <DragDropContext
@@ -563,15 +563,27 @@ function ItemList() {
                               onSave={(v) => onEditBoxSave(v, item.id)}
                             />
                             <button
-                              className="px-1 mx-2 text-red-500 border bg-grey-100 rounded-md ml-auto hover:underline"
+                              className="px-1 mx-2 text-red-500 rounded-md ml-auto hover:text-red-600"
                               id={"rem" + item.id}
                               onClick={onRemoveclick}
                               aria-label="Remove"
                             >
-                              X
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-6 w-6"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                />
+                              </svg>
                             </button>
                           </div>
-                          <hr />
                         </div>
                       )}
                     </Draggable>
@@ -606,7 +618,7 @@ function ItemList() {
               }}
             />
             <input
-              className="active:scale-95 active:duration-75 border-2 my-2 px-1 mr-5 border-gray-200 bg-gray-200 rounded-sm transition duration-200 ease hover:bg-gray-300 focus:outline-none focus:shadow-outline"
+              className="active:scale-95 active:duration-75 my-2 px-1 mr-5 text-white bg-blue-600 rounded-md transition duration-200 ease hover:bg-blue-700 focus:outline-none focus:shadow-outline"
               type="submit"
               value="Add"
             />

@@ -22,7 +22,7 @@ This project was made for the [Cloudflare Developer Challenge](https://challenge
 ## Plans
 
 - fix alignment of status indicator on small devices
-- redesign add and remove button
+- add dark mode
 - communicate more clearly that you can edit and reorder entries
 - add list name changing
 - add favorite lists
