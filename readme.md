@@ -14,6 +14,7 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 - 🌙 Togglable dark mode
 - ✔️ add/remove/complete items (obviously)
 - 📝 Custom named lists
+- ♿ Accessible
 
 ## Built with
 
