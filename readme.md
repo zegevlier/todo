@@ -4,7 +4,7 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 
 ## Features
 
-- 🚀 Automatic syncing between clients
+- 🚀 Live syncing between clients
 - 📤 Read-only, cloned and live-edit share
 - ↕️ Change order with drag-and-drop
 - ✏️ Edit items by clicking on them
