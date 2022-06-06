@@ -32,6 +32,8 @@ function ItemList() {
   const [oldName, setOldName] = useState<string>("");
   const [error, setError] = useState<string>("");
 
+  const [isFav, setIsFav] = useState<boolean>(false);
+
   const { sendJsonMessage, readyState } = useWebSocket(
     `${process.env.REACT_APP_WS_URL}/${id}/ws`,
     {
@@ -79,6 +81,13 @@ function ItemList() {
               item.id === id ? { ...item, name: msg.value } : item
             );
             localStorage.setItem("recent", JSON.stringify(recentItems));
+            let favItems: RecentType[] = JSON.parse(
+              localStorage.getItem("favorites") || "[]"
+            );
+            favItems = favItems.map((item) =>
+              item.id === id ? { ...item, name: msg.value } : item
+            );
+            localStorage.setItem("favorites", JSON.stringify(favItems));
           } else {
             console.error("Unknown message type:", msg.type, msg);
           }
@@ -125,6 +134,10 @@ function ItemList() {
           });
           recentItems = recentItems.slice(0, 10);
           localStorage.setItem("recent", JSON.stringify(recentItems));
+          let favorites: RecentType[] = JSON.parse(
+            localStorage.getItem("favorites") || "[]"
+          );
+          setIsFav(favorites.find((item) => item.id === id) !== undefined);
         } else {
           setError(data.error);
         }
@@ -234,7 +247,7 @@ function ItemList() {
         <title>{name}</title>
       </Helmet>
       <nav className="px-1 sm:px-2 py-2 bg-gray-800 w-screen">
-        <div className="flex">
+        <div className="flex gap-1">
           <button
             className="order-first text-white rounded-md pr-1 py-2.5"
             aria-label="Go back home"
@@ -262,187 +275,227 @@ function ItemList() {
               {error}
             </p>
           ) : (
-            <div className="w-screen flex gap-1">
-              <div className="md:text-3xl text-xl text-white order-first ml-0 mr-auto">
-                <EditText
-                  inputClassName="text-black"
-                  // @ts-ignore The wrong type is being used
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    if (oldName.length === 0) {
-                      setOldName(name);
-                    }
-                    const value = e.target.value;
-                    console.log("changing", value);
-                    if (value.length < 25) {
-                      setName(value);
-                    }
-                  }}
-                  onSave={(value) => {
-                    if (value.value.length > 25 || value.value.length < 3) {
-                      setName(oldName);
-                      setOldName("");
-                      return;
-                    }
+            <div className="md:text-3xl text-xl text-white order-first ml-0 mr-0">
+              <EditText
+                inputClassName="text-black"
+                // @ts-ignore The wrong type is being used
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (oldName.length === 0) {
+                    setOldName(name);
+                  }
+                  const value = e.target.value;
+                  console.log("changing", value);
+                  if (value.length < 25) {
+                    setName(value);
+                  }
+                }}
+                onSave={(value) => {
+                  if (value.value.length > 25 || value.value.length < 3) {
+                    setName(oldName);
                     setOldName("");
-                    setName(value.value);
-                    fetch(`${process.env.REACT_APP_API_URL}/${id}/setname`, {
-                      method: "POST",
-                      body: JSON.stringify({
-                        name: value.value,
-                      }),
-                    });
+                    return;
+                  }
+                  setOldName("");
+                  setName(value.value);
+                  fetch(`${process.env.REACT_APP_API_URL}/${id}/setname`, {
+                    method: "POST",
+                    body: JSON.stringify({
+                      name: value.value,
+                    }),
+                  });
 
-                    console.log(value);
-                  }}
-                  value={name}
-                ></EditText>
-              </div>
+                  console.log(value);
+                }}
+                value={name}
+              ></EditText>
+            </div>
+          )}
 
-              <div id="purgeButton" title="Delete all" className="">
-                <div className="relative active:scale-95 active:duration-75 ">
-                  <button
-                    onClick={() => deleteAll()}
-                    className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
-                    aria-label="Purge"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <div id="shareButton" title={connectionStatus} className="">
-                <div className="relative active:scale-95 active:duration-75 ">
-                  <button
-                    className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
-                    aria-label="Open share dropdown"
-                    onClick={() => setShareDropdownShown(!shareDropdownShown)}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                      />
-                    </svg>
-                  </button>
-                </div>
-                <div
-                  id="shareDropdown"
-                  className={`${
-                    shareDropdownShown ? "" : "hidden"
-                  } origin-top-right absolute right-0 mt-2 w-40 rounded-bl-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10 divide-gray-100 dark:bg-gray-700`}
+          {error.length === 0 && (
+            <div
+              className={`order-first text-center items-center justify-center mr-auto ml-0 hover:text-yellow-300 mt-auto mb-auto ${
+                isFav ? "text-yellow-300" : "text-white"
+              }`}
+            >
+              <button
+                aria-label="Favorite"
+                onClick={() => {
+                  setIsFav(!isFav);
+                  let favorites: RecentType[] = JSON.parse(
+                    localStorage.getItem("favorites") || "[]"
+                  );
+                  if (isFav) {
+                    favorites = favorites.filter((f) => f.id !== id);
+                  } else {
+                    if (id && name) {
+                      favorites.push({
+                        id: id,
+                        name: name,
+                        date: new Date().toString(),
+                      });
+                    }
+                  }
+                  localStorage.setItem("favorites", JSON.stringify(favorites));
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-6 h-6"
+                  viewBox="0 0 24 24"
+                  fill={isFav ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  <ul
-                    className="py-1 text-sm text-gray-700 dark:text-gray-200"
-                    aria-labelledby="dropdownDefault"
-                  >
-                    <li>
-                      <button
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
-                        onClick={() => {
-                          shareOrCopy(window.location.href);
-                        }}
-                      >
-                        Live edit
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
-                        onClick={() => {
-                          fetch(
-                            `${process.env.REACT_APP_API_URL}/${id}/clone`,
-                            {
-                              method: "POST",
-                            }
-                          )
-                            .then((res) => res.json())
-                            .then((data) => {
-                              shareOrCopy(
-                                new URL(window.location.href).origin +
-                                  "/" +
-                                  data.id
-                              );
-                            });
-                        }}
-                      >
-                        Clone
-                      </button>
-                    </li>
-                    <li>
-                      <button
-                        className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
-                        onClick={() => {
-                          fetch(
-                            `${process.env.REACT_APP_API_URL}/${id}/export`,
-                            {
-                              method: "POST",
-                            }
-                          )
-                            .then((res) => res.json())
-                            .then((data) => {
-                              shareOrCopy(
-                                new URL(window.location.href).origin +
-                                  "/r/" +
-                                  data.id
-                              );
-                            });
-                        }}
-                      >
-                        Read only copy
-                      </button>
-                    </li>
-                  </ul>
-                </div>
-              </div>
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+              </button>
+            </div>
+          )}
 
-              <div id="refreshButton" title={connectionStatus} className="">
-                <div className="relative active:scale-95 active:duration-75 ">
-                  <button
-                    onClick={() => sendJsonMessage({ type: "get" })}
-                    className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
-                    aria-label="Refresh"
+          {error.length === 0 && (
+            <div id="purgeButton" title="Delete all" className="">
+              <div className="relative active:scale-95 active:duration-75 ">
+                <button
+                  onClick={() => deleteAll()}
+                  className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
+                  aria-label="Purge"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2"
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+          {error.length === 0 && (
+            <div id="shareButton" className="">
+              <div className="relative active:scale-95 active:duration-75 ">
+                <button
+                  className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
+                  aria-label="Open share dropdown"
+                  onClick={() => setShareDropdownShown(!shareDropdownShown)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div
+                id="shareDropdown"
+                className={`${
+                  shareDropdownShown ? "" : "hidden"
+                } origin-top-right absolute right-0 mt-2 w-40 rounded-bl-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-10 divide-gray-100 dark:bg-gray-700`}
+              >
+                <ul
+                  className="py-1 text-sm text-gray-700 dark:text-gray-200"
+                  aria-labelledby="dropdownDefault"
+                >
+                  <li>
+                    <button
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
+                      onClick={() => {
+                        shareOrCopy(window.location.href);
+                      }}
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                      />
-                    </svg>
-                    <div
-                      style={{ backgroundColor: readyColour }}
-                      className="absolute bottom-0 sm:-right-1 right-2 w-4 h-4 mr-1 rounded-full"
-                    ></div>
-                  </button>
-                </div>
+                      Live edit
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
+                      onClick={() => {
+                        fetch(`${process.env.REACT_APP_API_URL}/${id}/clone`, {
+                          method: "POST",
+                        })
+                          .then((res) => res.json())
+                          .then((data) => {
+                            shareOrCopy(
+                              new URL(window.location.href).origin +
+                                "/" +
+                                data.id
+                            );
+                          });
+                      }}
+                    >
+                      Clone
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-full text-left"
+                      onClick={() => {
+                        fetch(`${process.env.REACT_APP_API_URL}/${id}/export`, {
+                          method: "POST",
+                        })
+                          .then((res) => res.json())
+                          .then((data) => {
+                            shareOrCopy(
+                              new URL(window.location.href).origin +
+                                "/r/" +
+                                data.id
+                            );
+                          });
+                      }}
+                    >
+                      Read only copy
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {error.length === 0 && (
+            <div id="refreshButton" title={connectionStatus} className="">
+              <div className="relative active:scale-95 active:duration-75 ">
+                <button
+                  onClick={() => sendJsonMessage({ type: "get" })}
+                  className="text-white rounded-md bg-blue-600 hover:bg-blue-700 px-5 py-2.5 mr-3 md:mr-0 transition duration-200 ease-in-out"
+                  aria-label="Refresh"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
+                  </svg>
+                  <div
+                    style={{ backgroundColor: readyColour }}
+                    className="absolute bottom-0 sm:-right-1 right-2 w-4 h-4 mr-1 rounded-full"
+                  ></div>
+                </button>
               </div>
             </div>
           )}
@@ -477,7 +530,6 @@ function ItemList() {
             <button
               type="button"
               className="absolute top-3 right-2.5 text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-800 dark:hover:text-white"
-              data-modal-toggle="authentication-modal"
               onClick={() => {
                 setShareLink("");
               }}

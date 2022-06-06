@@ -12,6 +12,10 @@ function Home(props: HomeProps) {
     localStorage.getItem("recent") || "[]"
   );
 
+  const favorites: RecentType[] = JSON.parse(
+    localStorage.getItem("favorites") || "[]"
+  );
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gray-50 p-8 sm:p-12 dark:bg-gray-800 dark:text-white">
       <div className=" w-full max-w-4xl rounded-md border-2 border-gray-100 bg-white p-10 pb-8 mb-16 dark:bg-gray-700 dark:border-gray-500">
@@ -97,7 +101,37 @@ function Home(props: HomeProps) {
           </form>
         </div>
 
+        {favorites.length > 0 && (
+          <div className="mt-3">
+            <p className="text-lg">Favorites:</p>
+            <div className="border rounded-md cursor-pointer p-2 w-full dark:border-gray-500">
+              <table className="w-full">
+                <tbody>
+                  {favorites.map((r, idx) => (
+                    <tr
+                      className={`text-lg ${
+                        idx === favorites.length - 1 ? "" : "border-b"
+                      }`}
+                      aria-label="Favorite lists"
+                      onClick={() => {
+                        window.location.href = `/${r.id}`;
+                      }}
+                      key={r.id}
+                    >
+                      <td className="w-auto">{r.name}</td>
+                      <td className="md:text-base text-sm pr-3 ml-auto text-right">
+                        {new Date(r.date).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         <div className="mt-3">
+          <p className="text-lg">Recents:</p>
           <div className="border rounded-md cursor-pointer p-2 w-full dark:border-gray-500">
             <table className="w-full">
               <tbody>

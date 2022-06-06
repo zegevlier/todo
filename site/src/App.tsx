@@ -2,7 +2,7 @@ import "./App.css";
 import ItemList from "./pages/ItemList";
 import ReadOnlyItemList from "./pages/ReadOnlyList";
 
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 import Helmet from "react-helmet";
 import { useEffect, useState } from "react";
@@ -26,7 +26,7 @@ function App() {
         <title>Todo & Shopping list app</title>
         <meta name="description" content="Todo and shopping list app" />
       </Helmet>
-      <Router>
+      <BrowserRouter>
         <Routes>
           <Route
             path="/"
@@ -35,7 +35,7 @@ function App() {
           <Route path="/r/:id" element={<ReadOnlyItemList />} />
           <Route path="/:id" element={<ItemList />} />
         </Routes>
-      </Router>
+      </BrowserRouter>
     </div>
   );
 }

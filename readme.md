@@ -10,6 +10,7 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 - ✏️ Edit items by clicking on them
 - 📱 Responsive design
 - 🕛 Recently opened lists
+- ⭐ Favorite lists
 - 🌙 Togglable dark mode
 - ✔️ add/remove/complete items (obviously)
 - 📝 Custom named lists
@@ -21,7 +22,3 @@ The website was built with React, hosted on Pages. For the backend, I used Cloud
 ## Built for
 
 This project was made for the [Cloudflare Developer Challenge](https://challenge.developers.cloudflare.com/) of Spring 2022.
-
-## Plans
-
-- add favorite lists
