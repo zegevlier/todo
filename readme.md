@@ -4,15 +4,15 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 
 ## Features
 
-- Automatic syncing between clients
-- Read-only, cloned and live-edit share
-- Change order with drag-and-drop
-- Edit items by clicking on them
-- Responsive design
-- Recently opened lists
-- Togglable dark mode
-- add/remove/complete items (obviously)
-- Custom named lists
+- 🚀 Automatic syncing between clients
+- 📤 Read-only, cloned and live-edit share
+- ↕️ Change order with drag-and-drop
+- ✏️ Edit items by clicking on them
+- 📱 Responsive design
+- 🕛 Recently opened lists
+- 🌙 Togglable dark mode
+- ✔️ add/remove/complete items (obviously)
+- 📝 Custom named lists
 
 ## Built with
 
