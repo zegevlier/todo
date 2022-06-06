@@ -14,7 +14,7 @@ function Home(props: HomeProps) {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-gray-50 p-8 sm:p-12 dark:bg-gray-800 dark:text-white">
-      <div className="w-full max-w-4xl rounded-md border-2 border-gray-100 bg-white p-10 pb-8 dark:bg-gray-700 dark:border-gray-500">
+      <div className=" w-full max-w-4xl rounded-md border-2 border-gray-100 bg-white p-10 pb-8 mb-16 dark:bg-gray-700 dark:border-gray-500">
         <div className="relative w-full h-full">
           {(darkMode === true || darkMode === false) && (
             <button
