@@ -576,7 +576,7 @@ function ItemList() {
                           {...provided.dragHandleProps}
                         >
                           <div
-                            className="flex flex-row items-center"
+                            className="flex flex-row items-center py-0.5"
                             key={item.id}
                           >
                             <input
@@ -612,7 +612,7 @@ function ItemList() {
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
-                                className="h-6 w-6"
+                                className="h-7 w-7"
                                 fill="none"
                                 viewBox="0 0 24 24"
                                 stroke="currentColor"
@@ -621,7 +621,7 @@ function ItemList() {
                                 <path
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
-                                  d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  d="M6 18L18 6M6 6l12 12"
                                 />
                               </svg>
                             </button>
@@ -646,10 +646,10 @@ function ItemList() {
       {error ? (
         <div></div>
       ) : (
-        <footer className="fixed bottom-0 w-screen border-t-2 bg-slate-100 dark:bg-slate-700 dark:border-gray-800">
+        <footer className="fixed bottom-0 w-screen bg-slate-100 dark:bg-slate-700 dark:border-gray-800 text-lg">
           <form onSubmit={onSubmit} className="flex flex-row">
             <input
-              className="w-screen border-gray-200 focus:border-blue-500 focus:outline-none border-2 m-2 p-0.5 dark:bg-slate-400 dark:border-gray-800"
+              className="w-screen border-gray-200 focus:border-blue-500 focus:outline-none border-2 m-2 p-0.5 dark:bg-slate-400 dark:border-gray-800 dark:focus:border-blue-500"
               type="text"
               value={adding}
               id="addItemBox"
@@ -659,11 +659,12 @@ function ItemList() {
                 setAdding(e.target.value);
               }}
             />
-            <input
-              className="active:scale-95 active:duration-75 my-2 px-1 mr-5 text-white bg-blue-600 rounded-md transition duration-200 ease hover:bg-blue-700 focus:outline-none focus:shadow-outline"
+            <button
+              className="active:scale-95 active:duration-75 my-2 px-1 mr-3 text-white bg-blue-600 rounded-sm transition duration-200 ease hover:bg-blue-700 focus:outline-none focus:shadow-outline"
               type="submit"
-              value="Add"
-            />
+            >
+              Add
+            </button>
             <label htmlFor="addItemBox" className="visuallyhidden">
               Add new item
             </label>
