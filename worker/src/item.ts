@@ -302,6 +302,29 @@ export class Items {
             })
         });
 
+        api.post("/:id/setname", async (c) => {
+            const parsedRequest: any = await c.req.json();
+            const newName = parsedRequest.name;
+            if (!newName) {
+                return c.json({
+                    error: "Name is required"
+                });
+            } else if (newName.length > 25 || newName.length < 3) {
+                return c.json({
+                    error: "Name must be between 3 and 25 characters"
+                });
+            }
+            this.name = newName;
+            this.state.storage.put("name", this.name)
+            this.broadcast({
+                'type': 'setname',
+                'value': this.name
+            });
+            return c.json({
+                success: "ok"
+            });
+        });
+
         api.get('/:id', async (c) => {
             return c.json({
                 'name': this.name,

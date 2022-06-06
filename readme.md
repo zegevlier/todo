@@ -24,5 +24,4 @@ This project was made for the [Cloudflare Developer Challenge](https://challenge
 
 ## Plans
 
-- add list name changing
 - add favorite lists

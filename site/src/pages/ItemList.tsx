@@ -29,6 +29,7 @@ function ItemList() {
   const [shareLink, setShareLink] = useState<string>("");
   const [shareDropdownShown, setShareDropdownShown] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
+  const [oldName, setOldName] = useState<string>("");
   const [error, setError] = useState<string>("");
 
   const { sendJsonMessage, readyState } = useWebSocket(
@@ -68,6 +69,16 @@ function ItemList() {
             const [removed] = newItems.splice(msg.data.oldIdx, 1);
             newItems.splice(msg.data.newIdx, 0, removed);
             setItems(newItems);
+          } else if (msg.type === "setname") {
+            setName(msg.value);
+            setOldName(msg.value);
+            let recentItems: RecentType[] = JSON.parse(
+              localStorage.getItem("recent") || "[]"
+            );
+            recentItems = recentItems.map((item) =>
+              item.id === id ? { ...item, name: msg.value } : item
+            );
+            localStorage.setItem("recent", JSON.stringify(recentItems));
           } else {
             console.error("Unknown message type:", msg.type, msg);
           }
@@ -252,9 +263,40 @@ function ItemList() {
             </p>
           ) : (
             <div className="w-screen flex gap-1">
-              <p className="md:text-3xl text-xl text-white order-first ml-0 mr-auto">
-                {name}
-              </p>
+              <div className="md:text-3xl text-xl text-white order-first ml-0 mr-auto">
+                <EditText
+                  inputClassName="text-black"
+                  // @ts-ignore The wrong type is being used
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    if (oldName.length === 0) {
+                      setOldName(name);
+                    }
+                    const value = e.target.value;
+                    console.log("changing", value);
+                    if (value.length < 25) {
+                      setName(value);
+                    }
+                  }}
+                  onSave={(value) => {
+                    if (value.value.length > 25 || value.value.length < 3) {
+                      setName(oldName);
+                      setOldName("");
+                      return;
+                    }
+                    setOldName("");
+                    setName(value.value);
+                    fetch(`${process.env.REACT_APP_API_URL}/${id}/setname`, {
+                      method: "POST",
+                      body: JSON.stringify({
+                        name: value.value,
+                      }),
+                    });
+
+                    console.log(value);
+                  }}
+                  value={name}
+                ></EditText>
+              </div>
 
               <div id="purgeButton" title="Delete all" className="">
                 <div className="relative active:scale-95 active:duration-75 ">
@@ -596,7 +638,7 @@ function ItemList() {
           <div className="h-10"></div>
         </div>
       ) : (
-        <div className="h-20 text-2xl items-end flex justify-center w-screen text-center">
+        <div className="h-20 text-2xl items-end flex justify-center w-screen text-center dark:text-white">
           <p>No items, create your first below!</p>
         </div>
       )}
