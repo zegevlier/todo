@@ -24,7 +24,7 @@ function Home(props: HomeProps) {
               }}
               id="theme-toggle"
               type="button"
-              className="absolute text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg p-2.5"
+              className="absolute -left-8 -top-8 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg p-2.5"
             >
               <svg
                 id="theme-toggle-dark-icon"

@@ -10,7 +10,7 @@ I made a simple checklist app. It uses websockets to sync changes between all th
 - Edit items by clicking on them
 - Responsive design
 - Recently opened lists
-- Dark mode
+- Togglable dark mode
 - add/remove/complete items (obviously)
 - Custom named lists
 
@@ -24,7 +24,5 @@ This project was made for the [Cloudflare Developer Challenge](https://challenge
 
 ## Plans
 
-- fix alignment of status indicator on small devices
 - add list name changing
 - add favorite lists
-- make into PWA (if time permits)

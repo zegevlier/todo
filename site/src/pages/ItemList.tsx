@@ -397,7 +397,7 @@ function ItemList() {
                     </svg>
                     <div
                       style={{ backgroundColor: readyColour }}
-                      className="absolute bottom-0 -right-1 w-4 h-4 mr-1 rounded-full"
+                      className="absolute bottom-0 sm:-right-1 right-2 w-4 h-4 mr-1 rounded-full"
                     ></div>
                   </button>
                 </div>
@@ -557,7 +557,7 @@ function ItemList() {
                               className={`cursor-text ${
                                 item.checked ? "strike" : ""
                               }`}
-                              inputClassName="w-screen mr-1"
+                              inputClassName="w-screen mr-1 text-black"
                               defaultValue={item.value}
                               id="inputelement"
                               onSave={(v) => onEditBoxSave(v, item.id)}
